@@ -27,7 +27,7 @@ extern "C"{
 #if WIN32
 #define SERIAL_BAUDRATE		115200
 #else
-#define SERIAL_BAUDRATE		0x0000f /*B38400*/
+#define SERIAL_BAUDRATE		B38400
 #endif
 /**
  * @enum	BCAP_HRESULT
@@ -83,11 +83,11 @@ typedef enum BCAP_HRESULT {
 
 /* b-CAP Utility macros */
 #ifndef SUCCEEDED
-#define SUCCEEDED(Status) ((BCAP_HRESULT)(Status) >= 0)
+#define SUCCEEDED(Status) ((BCAP_HRESULT)(Status) == 0)
 #endif
 
 #ifndef FAILED
-#define FAILED(Status) ((BCAP_HRESULT)(Status) < 0)
+#define FAILED(Status) ((BCAP_HRESULT)(Status) > 0)
 #endif
 
 /* b-CAP standard types */

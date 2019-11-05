@@ -224,57 +224,16 @@ static	struct sockaddr_in	m_sockServerAddr;						/* server's socket address */
 BCAP_HRESULT	bCap_Open(char *pIPStr, int iPort, int *iSockFd) { 
 
 	BCAP_HRESULT hr = BCAP_E_FAIL;
-
-#ifdef BCAP_CONNECTION_COM
         printf("Entering COM setting Line %d\n", __LINE__);
-#ifdef WIN32
-	BOOL bRet;
-	char szFileName[16];
-	DCB dcb;
-	HANDLE hSerial;
 
-	COMMTIMEOUTS stTimeOut;
-
-	sprintf(szFileName, "//./COM%d", iPort);
-	hSerial = CreateFile(szFileName, GENERIC_READ|GENERIC_WRITE, 0,	NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-	if (GetCommState(hSerial, &dcb)) {
-		dcb.BaudRate = SERIAL_BAUDRATE;
-		dcb.ByteSize = 8;
-		dcb.Parity = NOPARITY;
-		dcb.StopBits = ONESTOPBIT;
-		dcb.fOutX = FALSE;
-		dcb.fInX = FALSE;
-		dcb.fOutxCtsFlow = FALSE;
-		dcb.fRtsControl = RTS_CONTROL_ENABLE;
-		dcb.fOutxDsrFlow = FALSE;
-		dcb.fDtrControl = DTR_CONTROL_ENABLE;
-		dcb.fDsrSensitivity = FALSE;
-
-		bRet = SetCommState(hSerial, &dcb);
-
-		/* timeout setting */
-		stTimeOut.ReadIntervalTimeout = MAXDWORD ;
-		stTimeOut.ReadTotalTimeoutMultiplier = MAXDWORD ;
-		stTimeOut.ReadTotalTimeoutConstant = 1000;
-		stTimeOut.WriteTotalTimeoutMultiplier = MAXDWORD;
-		stTimeOut.WriteTotalTimeoutConstant = 1000;
-		bRet = SetCommTimeouts( hSerial, &stTimeOut );
-
-		*iSockFd = (int)hSerial;
-		hr = BCAP_S_OK;
-	}
-        printf("Line WIN com port%d\n", __LINE__);
-
-#else
 	struct termios tio;
 	char dev[16];
-        printf("iPort value is: %d [Line %d]\n", iPort, __LINE__);
-	sprintf(dev, "/dev/ttyS%d", iPort);
-        printf("dev value is: %s [Line %d]\n",dev, __LINE__);
+        sprintf(dev, "/dev/ttyUSB%d", iPort);
+        printf("DRIVER: dev value is: '%s' [Line %d]\n",dev, __LINE__);
 	*iSockFd = open(dev, O_RDWR | O_NOCTTY | O_NONBLOCK);
-
-	bzero(&tio, sizeof(tio));
-	tio.c_cflag = SERIAL_BAUDRATE | CS8 | CLOCAL | CREAD;
+        bzero(&tio, sizeof(tio));
+	
+        tio.c_cflag = B115200 | CS8 | CLOCAL | CREAD;
 	tio.c_iflag = IGNPAR;
 	tio.c_oflag = 0;
 	tio.c_lflag = 0;
@@ -285,69 +244,19 @@ BCAP_HRESULT	bCap_Open(char *pIPStr, int iPort, int *iSockFd) {
 	tcsetattr(*iSockFd, TCSANOW, &tio);
 	fcntl(*iSockFd, F_SETFL, FNDELAY);
         printf("b-caps com port linux Line %d\n", __LINE__);
-        hr = BCAP_S_OK;
+        printf("DRIVER: iSockFd:value %d,address %p. Line %d\n ", *iSockFd, iSockFd,__LINE__);
+	if ( *iSockFd >= 0 )
+        {
+          hr = BCAP_S_OK;
+        }
+        else
+        {
+          hr = BCAP_E_FAIL;
+          printf("Fail to open socket. Line %d\n", __LINE__);
+        }
 
-#endif
 
-#else 
-	printf("Setting server socket address %d\n", __LINE__);
-        struct sockaddr_in	serverAddr;			/* server's socket address */ 
-	int					sockAddrSize;		/* size of socket address structure */ 
 
-#ifdef WIN32
-	WSADATA wsaData;
-	WSAStartup(MAKEWORD(2,0), &wsaData);
-#endif
-
-	sockAddrSize = sizeof( struct sockaddr_in);
-	memset( (char *)&serverAddr, 0, sockAddrSize);
-	serverAddr.sin_family = AF_INET;
-
-	serverAddr.sin_port = htons((short)iPort);					/* SERVER_PORT_NUM */
-
-#ifdef WIN32
-	serverAddr.sin_addr.S_un.S_addr = inet_addr(pIPStr);	/* SERVER_IP_ADDRESS */
-#else
-	serverAddr.sin_addr.s_addr = inet_addr(pIPStr);	/* SERVER_IP_ADDRESS */
-/*	serverAddr.sin_len = (u_char)sockAddrSize;
-	inet_aton(pIPStr, &(serverAddr.sin_addr));*/
-#endif
-
-#if BCAP_CONNECTION_UDP
-	printf("b-caps BCAP_CONNECTION_UDP %d\n", __LINE__);
-        memcpy( (char *)&m_sockServerAddr, (char *)&serverAddr, sockAddrSize);
-	/* socket  */
-	if( (*iSockFd = socket( AF_INET, SOCK_DGRAM, 0)) == -1) {
-		perror( "Fail.. Function:socket(UDP) in bCap_Open()");
-		hr = BCAP_E_UNEXPECTED;
-	}
-	else{
-		hr = BCAP_S_OK;
-	}
-        printf("B caps UDP Line %d\n", __LINE__);
-
-#else /* TCP */
-	/* socket  */
-	if( (*iSockFd = socket( AF_INET, SOCK_STREAM, 0)) == -1) {
-		perror( "Fail.. Function:socket(TCP) in bCap_Open()");
-		hr = BCAP_E_UNEXPECTED;
-	}
-	else{		
-		/* connect to server */
-		int iResult;
-		iResult = connect(*iSockFd, (struct sockaddr *)&serverAddr, sizeof(serverAddr));
-
-		if (iResult == 0){
-			hr = BCAP_S_OK;
-		}
-		else{
-			hr = BCAP_E_UNEXPECTED;	
-		}
-	}
-        printf("B caps TCP Line %d\n", __LINE__);
-
-#endif
-#endif
 
 	return hr;
 }
@@ -403,15 +312,17 @@ BCAP_HRESULT bCap_ServiceStart(int iSockFd){
 	BCAP_PACKET		*pRecPacket;
 
 	BCAP_HRESULT hr = BCAP_E_FAIL;
-
-	pPacket = Packet_Create(BCAP_FUNC_Service_Start);		/* Service_Start */
+        printf("DRIVER: Bug Trace. Line %d\n", __LINE__);
+	pPacket = Packet_Create(BCAP_FUNC_Service_Start);        /* Service_Start */
+        printf("DRIVER: Bug Trace. Line %d\n", __LINE__);
 	if (pPacket != NULL){
 
 		{
 			pRecPacket = Packet_Create(BCAP_S_OK);					/* storing a new packet from RC    */
+                        printf("DRIVER: Bug Trace. Line %d\n", __LINE__);
 			if (pRecPacket != NULL){
 				hr = bCapSendAndRec(iSockFd, pPacket, pRecPacket);
-
+                                printf("DRIVER: Bug Trace. Line %d\n", __LINE__);
 			}
 			Packet_Release(pRecPacket);
 		}
@@ -475,9 +386,8 @@ BCAP_HRESULT bCap_ControllerConnect(	int iSockFd,char *pStrCtrlname,										ch
 	BCAP_ARG		*pArg;
 
 	BCAP_HRESULT hr = BCAP_E_FAIL;
-        printf("DRIVER:Attempting to connect to controller. Line %d\n", __LINE__);
-	pPacket = Packet_Create(BCAP_FUNC_Controller_Connect);		/* Controller_Connect */
-	printf("DRIVER:Controller connect successful %d\n", __LINE__);
+        pPacket = Packet_Create(BCAP_FUNC_Controller_Connect);		/* Controller_Connect */
+	//printf("DRIVER:Controller connect successful %d\n", __LINE__);
         if (pPacket != NULL){
                 printf("DRIVER: Bug Trace. Line %d\n", __LINE__);
 		u_char buff[LOCALBUFFER_SZ];
@@ -521,13 +431,12 @@ BCAP_HRESULT bCap_ControllerConnect(	int iSockFd,char *pStrCtrlname,										ch
 		{
 			pRecPacket = Packet_Create(BCAP_S_OK);
 			printf("DRIVER: Bug Trace. Line %d\n", __LINE__);
+printf("DRIVER: iSockFd:value %p,address %d. Line %d\n.", &iSockFd, iSockFd,__LINE__);
                         if (pRecPacket != NULL){
 				hr = bCapSendAndRec(iSockFd, pPacket, pRecPacket);
 				printf("DRIVER: Bug Trace. Line %d\n", __LINE__);
                                 if SUCCEEDED(hr){
 					printf("DRIVER: Bug Trace. Line %d\n", __LINE__);
-printf("plhController %zu (LINE%d)\n", sizeof(*plhController),__LINE__);
-printf("pRecPacket->pArg->data %zu (LINE%d)\n", sizeof(*(pRecPacket->pArg->data)),__LINE__);
                                         copyValue(plhController, pRecPacket->pArg->data, 4);
                                         printf("DRIVER: Bug Trace. Line %d\n", __LINE__);
 				}
@@ -1842,14 +1751,17 @@ static BCAP_HRESULT bCapSendAndRec(int iSockFd, BCAP_PACKET		*pSndPacket, BCAP_P
 	BCAP_HRESULT hr = BCAP_E_FAIL;
 
 	if ( (pRecPacket != NULL) && (pSndPacket != NULL) ){
-
+                printf("DRIVER: Bug Trace. Line %d\n", __LINE__);
 		if (Packet_Send(iSockFd, pSndPacket) == BCAP_S_OK){
-
+                        printf("DRIVER: Bug Trace. Line %d\n", __LINE__);
 			u_char *pRec = receivePacket(iSockFd);	/* Receive packet and alloc memory for storing received binary */
+                        printf("DRIVER: Bug Trace. Line %d\n", __LINE__);
 			if(pRec != NULL){
 				hr = Packet_Deserialize(pRec, pRecPacket );
+                                printf("DRIVER: Bug Trace. Line %d\n", __LINE__);
 				if SUCCEEDED(hr){
-					hr = (BCAP_HRESULT)pRecPacket->lFuncID;
+				    printf("DRIVER: Bug Trace. Line %d\n", __LINE__);	
+                                    hr = (BCAP_HRESULT)pRecPacket->lFuncID;
 				}
 				
 				
@@ -1895,8 +1807,9 @@ static u_char *receivePacket(int iSockFd){
 	u_long lRecvSize;
 	int lRecLen;
 	u_long lHeaderLen;
-	
+	printf("DRIVER: Bug Trace. Line %d\n", __LINE__);
 #if BCAP_CONNECTION_UDP
+
 	int          fromlen;
 	struct sockaddr_in	serverAddr;			/* server's socket address */ 
 #endif
@@ -2358,7 +2271,7 @@ static BCAP_HRESULT		Packet_Serialize(BCAP_PACKET *pSrcPacket, void *pDstBinData
  */  
 
 static BCAP_HRESULT		Packet_Deserialize(void *pSrcBinData, BCAP_PACKET *pDstPacket){
-
+        printf("DRIVER: Bug Trace. Line %d\n", __LINE__);
 
 	BCAP_HRESULT hr = BCAP_S_OK;
 	u_char *pSrcPtr;
@@ -2399,8 +2312,10 @@ static BCAP_HRESULT		Packet_Deserialize(void *pSrcBinData, BCAP_PACKET *pDstPack
 			lDataSize = lLength - BCAP_SIZE_ARGTYPE -BCAP_SIZE_ARGARRAYS;	/* size of "*data" */
 
 			pArgPtr = Arg_Create(iType, lArrays, lDataSize, pSrcPtr);		/* Create new arg */
+printf("DRIVER: Bug Trace. Line %d\n", __LINE__);
 			if (pArgPtr != NULL){
-				pSrcPtr = pSrcPtr + lDataSize;								/* skip "*data"  */
+				printf("DRIVER: Bug Trace. Line %d\n", __LINE__);
+                                pSrcPtr = pSrcPtr + lDataSize;								/* skip "*data"  */
 			}
 			else{
 				hr = BCAP_E_FAIL;

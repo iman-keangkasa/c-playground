@@ -90,18 +90,20 @@ int main(int argc, char* argv[])
 	
         /* Init and Start b-CAP		*/
 	hr = bCap_Open(SERVER_IP_ADDRESS, SERVER_PORT_NUM, &iSockFD);	/* Init socket  */
-        printf("Line %d bCap_Open\n", __LINE__);
-        printf("%d",hr);	
+printf("BSLAVE: iSockFd:Address %p,Value %d. Line %d\n", &iSockFD, iSockFD,__LINE__);
+        //printf("Line %d bCap_Open\n", __LINE__);
+        printf("BSLAVE: hr value is %x. Line %d\n",hr,__LINE__);	
         if FAILED(hr){
-         printf("Fail setting up Connection\n");       
-          return (hr);
+                printf("Fail setting up Connection\n");       
+                return (hr);
 	}
 
 	hr = bCap_ServiceStart(iSockFD);    /* Start b-CAP service */
-	printf("Line %d\n",__LINE__);
+	
 
         if FAILED(hr){
                 printf("Debug line %d\n", __LINE__);
+                printf("HR value: %x\n",hr);
 		return (hr);
 	}
 	
