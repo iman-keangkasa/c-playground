@@ -1,0 +1,24 @@
+#IncludeRegexLine: ^[ 	]*#[ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+../b-Cap/b-Cap.h
+
+/home/iman/version-control/c-playground/denso_VE026A/src/bCapSlvMove_for_VE026A.c
+termios.h
+-
+unistd.h
+-
+fcntl.h
+-
+stdio.h
+-
+math.h
+-
+b-Cap.h
+/home/iman/version-control/c-playground/denso_VE026A/src/b-Cap.h
+

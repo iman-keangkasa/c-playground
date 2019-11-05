@@ -1,0 +1,2 @@
+/usr/bin/ar qc libb-Cap.a  CMakeFiles/b-Cap.dir/b-Cap.c.o
+/usr/bin/ranlib libb-Cap.a

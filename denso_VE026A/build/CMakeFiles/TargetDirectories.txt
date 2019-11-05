@@ -1,0 +1,7 @@
+/home/iman/version-control/c-playground/denso_VE026A/build/CMakeFiles/rebuild_cache.dir
+/home/iman/version-control/c-playground/denso_VE026A/build/CMakeFiles/testing.dir
+/home/iman/version-control/c-playground/denso_VE026A/build/CMakeFiles/edit_cache.dir
+/home/iman/version-control/c-playground/denso_VE026A/build/CMakeFiles/denso_ex.dir
+/home/iman/version-control/c-playground/denso_VE026A/build/b-Cap/CMakeFiles/rebuild_cache.dir
+/home/iman/version-control/c-playground/denso_VE026A/build/b-Cap/CMakeFiles/edit_cache.dir
+/home/iman/version-control/c-playground/denso_VE026A/build/b-Cap/CMakeFiles/b-Cap.dir
