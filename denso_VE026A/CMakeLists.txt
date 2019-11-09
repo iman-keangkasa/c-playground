@@ -8,3 +8,6 @@ add_executable(testing src/test.c)
 
 target_link_libraries(denso_ex PUBLIC b-Cap m)
 target_include_directories(denso_ex PUBLIC "${PROJECT_SOURCE_DIR}/b-Cap")
+
+#for debugging purposes I will add a flag to my gcc compiling "-g"
+#target_compile_options(denso_ex PRIVATE -g)

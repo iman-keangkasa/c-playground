@@ -97,19 +97,19 @@ typedef unsigned char u_char;
 #ifndef u_short
 typedef unsigned short u_short;
 #endif
-#ifndef u_long
-typedef unsigned long u_long;
+#ifndef uint_t
+typedef unsigned int uint_t;
 #endif
 
 
 /*  b-CAP Variant Parameter */
 typedef struct  {	
 	u_short	Type;							/* b-CAP Type id */
-	u_long	Arrays;							/* Array count, must be >= 1 */
+	uint_t	Arrays;							/* Array count, must be >= 1 */
 	union {
 		u_char	CharValue; 
 		u_short	ShortValue; 
-		u_long	LongValue;
+		uint_t	LongValue;
 		float	FloatValue;
 		double	DoubleValue;
 
@@ -130,34 +130,34 @@ BCAP_HRESULT	bCap_ServiceStart(int iSockFd);
 BCAP_HRESULT	bCap_ServiceStop(int iSockFd);
 
 /* b-CAP Controller Functions */
-BCAP_HRESULT	bCap_ControllerConnect(int iSockFd,char *pStrCtrlname, char *pStrProvName, char *pStrPcName, char *pStrOption, u_long *plhController);
-BCAP_HRESULT	bCap_ControllerDisconnect(int iSockFd, u_long lhController);
+BCAP_HRESULT	bCap_ControllerConnect(int iSockFd,char *pStrCtrlname, char *pStrProvName, char *pStrPcName, char *pStrOption, uint_t *plhController);
+BCAP_HRESULT	bCap_ControllerDisconnect(int iSockFd, uint_t lhController);
 
-BCAP_HRESULT	bCap_ControllerGetRobot(int iSockFd, u_long lhController, char *pStrRobotName, char *pStrOption, u_long *lhRobot);
-BCAP_HRESULT	bCap_ControllerGetVariable(int iSockFd, u_long lhController, char *pVarName, char *pstrOption, u_long *plhVar);
-BCAP_HRESULT	bCap_ControllerGetTask(int iSockFd, u_long lhController, char *pTskName, char *pstrOption, u_long *plhVar);
-BCAP_HRESULT	bCap_ControllerExecute(int iSockFd, u_long lhController, char *pStrCommand, char *pStrOption, void *plResult);
-BCAP_HRESULT	bCap_ControllerExecute2(int iSockFd, u_long lhController, char *pStrCommand, BCAP_VARIANT *pVntOption, BCAP_VARIANT *pvntResult);
+BCAP_HRESULT	bCap_ControllerGetRobot(int iSockFd, uint_t lhController, char *pStrRobotName, char *pStrOption, uint_t *lhRobot);
+BCAP_HRESULT	bCap_ControllerGetVariable(int iSockFd, uint_t lhController, char *pVarName, char *pstrOption, uint_t *plhVar);
+BCAP_HRESULT	bCap_ControllerGetTask(int iSockFd, uint_t lhController, char *pTskName, char *pstrOption, uint_t *plhVar);
+BCAP_HRESULT	bCap_ControllerExecute(int iSockFd, uint_t lhController, char *pStrCommand, char *pStrOption, void *plResult);
+BCAP_HRESULT	bCap_ControllerExecute2(int iSockFd, uint_t lhController, char *pStrCommand, BCAP_VARIANT *pVntOption, BCAP_VARIANT *pvntResult);
 
 /* b-CAP Robot Functions */
-BCAP_HRESULT	bCap_RobotRelease(int iSockFd, u_long lhRobot);
-BCAP_HRESULT	bCap_RobotGetVariable(int iSockFd, u_long lhRobot, char *pVarName, char *pStrOption, u_long *lhVarCurJnt);
-BCAP_HRESULT	bCap_RobotExecute(int iSockFd, u_long lhRobot, char *pStrCommand, char *pStrOption, void *plResult);
-BCAP_HRESULT	bCap_RobotChange(int iSockFd, u_long lhRobot, char *pStrCommand);
-BCAP_HRESULT	bCap_RobotMove(int iSockFd, u_long lhRobot, long lComp, char *pStrPose, char *pStrOption);
-BCAP_HRESULT	bCap_RobotExecuteSlaveMove(int iSockFd, u_long lhRobot, char *pStrCommand, float *pfOption, void *pResult);
-BCAP_HRESULT	bCap_RobotExecute2(int iSockFd, u_long lhRobot, char *pStrCommand, BCAP_VARIANT *pVntOption, BCAP_VARIANT *pvntResult);
+BCAP_HRESULT	bCap_RobotRelease(int iSockFd, uint_t lhRobot);
+BCAP_HRESULT	bCap_RobotGetVariable(int iSockFd, uint_t lhRobot, char *pVarName, char *pStrOption, uint_t *lhVarCurJnt);
+BCAP_HRESULT	bCap_RobotExecute(int iSockFd, uint_t lhRobot, char *pStrCommand, char *pStrOption, void *plResult);
+BCAP_HRESULT	bCap_RobotChange(int iSockFd, uint_t lhRobot, char *pStrCommand);
+BCAP_HRESULT	bCap_RobotMove(int iSockFd, uint_t lhRobot, long lComp, char *pStrPose, char *pStrOption);
+BCAP_HRESULT	bCap_RobotExecuteSlaveMove(int iSockFd, uint_t lhRobot, char *pStrCommand, float *pfOption, void *pResult);
+BCAP_HRESULT	bCap_RobotExecute2(int iSockFd, uint_t lhRobot, char *pStrCommand, BCAP_VARIANT *pVntOption, BCAP_VARIANT *pvntResult);
 
 /* b-CAP Task Functions */
-BCAP_HRESULT	bCap_TaskRelease(int iSockFd, u_long lhTask);
-BCAP_HRESULT	bCap_TaskGetVariable(int iSockFd, u_long lhTask, char *pVarName, char *pstrOption, u_long *plhVar);
-BCAP_HRESULT	bCap_TaskStart(int iSockFd, u_long lhTask, long lMode, char *pStrOption);
-BCAP_HRESULT	bCap_TaskStop(int iSockFd, u_long lhTask, long lMode, char *pStrOption);
+BCAP_HRESULT	bCap_TaskRelease(int iSockFd, uint_t lhTask);
+BCAP_HRESULT	bCap_TaskGetVariable(int iSockFd, uint_t lhTask, char *pVarName, char *pstrOption, uint_t *plhVar);
+BCAP_HRESULT	bCap_TaskStart(int iSockFd, uint_t lhTask, long lMode, char *pStrOption);
+BCAP_HRESULT	bCap_TaskStop(int iSockFd, uint_t lhTask, long lMode, char *pStrOption);
 
 /* b-CAP Variable Functions */
-BCAP_HRESULT 	bCap_VariableRelease(int iSockFd, u_long lhVar);
-BCAP_HRESULT	bCap_VariableGetValue(int iSockFd, u_long lhVar, void *pVntValue);
-BCAP_HRESULT	bCap_VariablePutValue(int iSockFd, u_long lhVar, u_short iType, u_long lArrays, void  *pVntValue);
+BCAP_HRESULT 	bCap_VariableRelease(int iSockFd, uint_t lhVar);
+BCAP_HRESULT	bCap_VariableGetValue(int iSockFd, uint_t lhVar, void *pVntValue);
+BCAP_HRESULT	bCap_VariablePutValue(int iSockFd, uint_t lhVar, u_short iType, uint_t lArrays, void  *pVntValue);
 
 #endif
 

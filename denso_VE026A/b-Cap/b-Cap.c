@@ -16,7 +16,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
+#include <errno.h>
 /* OS Switching */
 #ifdef WIN32
 	/* Windows */
@@ -138,10 +138,10 @@
  * @brief	BCAP_ARG 
  */
 typedef struct BCAP_ARG {
-	u_long	lLength;
+	uint_t	lLength;
 	
 	u_short iType;
-	u_long	lArrays;
+	uint_t	lArrays;
 	void	*data;
 
 	struct BCAP_ARG	*pNextArg;			/* pointer to the next argument  */
@@ -154,12 +154,12 @@ typedef struct BCAP_ARG {
  */
 typedef struct BCAP_PACKET {
 
-	u_long	lMsgLength;
+	uint_t	lMsgLength;
  
 	u_short iSerialNo;
 	u_short iReserved;
 
-	u_long	lFuncID;
+	uint_t	lFuncID;
 
 	u_short iArgs;
 
@@ -171,7 +171,7 @@ typedef struct BCAP_PACKET {
 static BCAP_HRESULT		Packet_Send(int iSd, BCAP_PACKET *pPacket);
 
 /* packet class */
-static BCAP_PACKET		*Packet_Create(u_long lFuncID);			
+static BCAP_PACKET		*Packet_Create(uint_t lFuncID);			
 static void				Packet_Release( BCAP_PACKET *pPacket);		/* Release allocated packet and the arguments */
 static BCAP_HRESULT		Packet_Serialize(BCAP_PACKET *pPacket, void *pBinData );		/* struct ---> bin */
 static BCAP_HRESULT		Packet_Deserialize(void *pBinData, BCAP_PACKET *pPacket );		/* bin ---> struct  */
@@ -179,25 +179,25 @@ static BCAP_HRESULT		Packet_AddArg( BCAP_PACKET *pPacket, BCAP_ARG *pNewArg);
 static BCAP_HRESULT		Packet_GetResult( BCAP_PACKET *pRecPacket, void *pResult);
 
 /* argument class */
-static BCAP_ARG			*Arg_Create( u_short iType, u_long lArrays, u_long lLength, void *data);
+static BCAP_ARG			*Arg_Create( u_short iType, uint_t lArrays, uint_t lLength, void *data);
 static void				Arg_Release( BCAP_ARG *pArg);	/* free the allocated argument */
 /* static BCAP_HRESULT	Arg_Serialize(void *pBinData);	*/									/* bin <--- struct  */
 /* static BCAP_HRESULT	Arg_Deserialize(BCAP_ARG *pArg, void *pBinData);	*/				/* struct <--- bin  */
 
 /* module socket utility functions */
 static BCAP_HRESULT		bCapSendAndRec(int iSockFd, BCAP_PACKET *pSndPacket, BCAP_PACKET *pRecPacket);
-static BCAP_HRESULT		sendBinary(int iSockFd, u_char *pBuff, u_long lSize);
+static BCAP_HRESULT		sendBinary(int iSockFd, u_char *pBuff, uint_t lSize);
 static u_char 			*receivePacket(int iSockFd);
 
 /* module utility functions */
-static u_long			sizeOfVariant(BCAP_VARIANT vntValue);
-static u_long			copyVariantFromArg(BCAP_VARIANT *pVntDst, BCAP_ARG *pArg);
-static u_long			copyArgValue(void *pDst, BCAP_ARG *pArg);
+static uint_t			sizeOfVariant(BCAP_VARIANT vntValue);
+static uint_t			copyVariantFromArg(BCAP_VARIANT *pVntDst, BCAP_ARG *pArg);
+static uint_t			copyArgValue(void *pDst, BCAP_ARG *pArg);
 
-static u_long			sizeOfVarType(u_short iType);
-static u_long			copyValue(void *pDst, void *pVntValue, u_long lLength);
-static u_long			copyToBSTR(void *pbDstPtr, void *pbSrcPtr);
-static u_long			copyFromBSTR(void *pDstAsciiPtr, void *pSrcBstrPtr);
+static uint_t			sizeOfVarType(u_short iType);
+static uint_t			copyValue(void *pDst, void *pVntValue, uint_t lLength);
+static uint_t			copyToBSTR(void *pbDstPtr, void *pbSrcPtr);
+static uint_t			copyFromBSTR(void *pDstAsciiPtr, void *pSrcBstrPtr);
 static void				*bMalloc(size_t size);
 static void				bFree(void *pPtr);
 
@@ -231,14 +231,15 @@ BCAP_HRESULT	bCap_Open(char *pIPStr, int iPort, int *iSockFd) {
         sprintf(dev, "/dev/ttyUSB%d", iPort);
         printf("DRIVER: dev value is: '%s' [Line %d]\n",dev, __LINE__);
 	*iSockFd = open(dev, O_RDWR | O_NOCTTY | O_NONBLOCK);
+	//*iSockFd = open(dev, O_RDWR | O_NOCTTY);
         bzero(&tio, sizeof(tio));
 	
-        tio.c_cflag = B115200 | CS8 | CLOCAL | CREAD;
+        tio.c_cflag = SERIAL_BAUDRATE | CS8 | CLOCAL | CREAD;
 	tio.c_iflag = IGNPAR;
 	tio.c_oflag = 0;
 	tio.c_lflag = 0;
-	tio.c_cc[VTIME] = 0;
-	tio.c_cc[VMIN] = 1;
+	tio.c_cc[VTIME] = 40; /* time out for 4 seconds */
+	tio.c_cc[VMIN] = 18;
 
 	tcflush(*iSockFd, TCIFLUSH);
 	tcsetattr(*iSockFd, TCSANOW, &tio);
@@ -380,7 +381,7 @@ BCAP_HRESULT bCap_ServiceStop(int iSockFd){
  *	@retval	BCAP_HRESULT
  *
  */  
-BCAP_HRESULT bCap_ControllerConnect(	int iSockFd,char *pStrCtrlname,										char *pStrProvName,										char *pStrPcName,										char *pStrOption,   									u_long *plhController){
+BCAP_HRESULT bCap_ControllerConnect(	int iSockFd,char *pStrCtrlname,										char *pStrProvName,										char *pStrPcName,										char *pStrOption,   									uint_t *plhController){
 	BCAP_PACKET		*pPacket;
 	BCAP_PACKET		*pRecPacket;
 	BCAP_ARG		*pArg;
@@ -391,7 +392,7 @@ BCAP_HRESULT bCap_ControllerConnect(	int iSockFd,char *pStrCtrlname,										ch
         if (pPacket != NULL){
                 printf("DRIVER: Bug Trace. Line %d\n", __LINE__);
 		u_char buff[LOCALBUFFER_SZ];
-		u_long lLen;
+		uint_t lLen;
 
 		{
 			lLen = copyToBSTR(buff,pStrCtrlname);
@@ -463,7 +464,7 @@ printf("DRIVER: iSockFd:value %p,address %d. Line %d\n.", &iSockFd, iSockFd,__LI
  *	@retval	BCAP_HRESULT
  *
  */  
-BCAP_HRESULT bCap_ControllerDisconnect(int iSockFd, u_long lhController){
+BCAP_HRESULT bCap_ControllerDisconnect(int iSockFd, uint_t lhController){
 	BCAP_PACKET		*pSndPacket;
 	BCAP_PACKET		*pRecPacket;
 	BCAP_ARG		*pArg;
@@ -508,13 +509,13 @@ BCAP_HRESULT bCap_ControllerDisconnect(int iSockFd, u_long lhController){
  *	@retval	BCAP_HRESULT
  *
  */  
-BCAP_HRESULT bCap_ControllerGetRobot(int iSockFd, u_long lhController, char *pStrRobotName, char *pStrOption, u_long *plhRobot){
+BCAP_HRESULT bCap_ControllerGetRobot(int iSockFd, uint_t lhController, char *pStrRobotName, char *pStrOption, uint_t *plhRobot){
 	BCAP_PACKET		*pSndPacket;
 	BCAP_PACKET		*pRecPacket;
 	BCAP_ARG		*pArg;
 
 	u_char buff[LOCALBUFFER_SZ];
-	u_long lLen;
+	uint_t lLen;
 
 	BCAP_HRESULT hr = BCAP_E_FAIL;
 
@@ -576,7 +577,7 @@ BCAP_HRESULT bCap_ControllerGetRobot(int iSockFd, u_long lhController, char *pSt
  *
  */  
 
-BCAP_HRESULT bCap_ControllerGetVariable(int iSockFd, u_long lhController, char *pVarName, char *pstrOption, u_long *plhVar){
+BCAP_HRESULT bCap_ControllerGetVariable(int iSockFd, uint_t lhController, char *pVarName, char *pstrOption, uint_t *plhVar){
 	BCAP_PACKET		*pSndPacket;
 	BCAP_PACKET		*pRecPacket;
 	BCAP_ARG		*pArg;
@@ -587,7 +588,7 @@ BCAP_HRESULT bCap_ControllerGetVariable(int iSockFd, u_long lhController, char *
 	if (pSndPacket != NULL){
 
 		u_char buff[LOCALBUFFER_SZ];
-		u_long lLen;
+		uint_t lLen;
 
 		{
 			pArg = Arg_Create( VT_I4, 1, 4, &lhController);
@@ -647,7 +648,7 @@ BCAP_HRESULT bCap_ControllerGetVariable(int iSockFd, u_long lhController, char *
  *	@retval	BCAP_HRESULT
  *
  */  
-BCAP_HRESULT bCap_ControllerGetTask(int iSockFd, u_long lhController, char *pTskName, char *pstrOption, u_long *plhVar){
+BCAP_HRESULT bCap_ControllerGetTask(int iSockFd, uint_t lhController, char *pTskName, char *pstrOption, uint_t *plhVar){
 	BCAP_PACKET		*pSndPacket;
 	BCAP_PACKET		*pRecPacket;
 	BCAP_ARG		*pArg;
@@ -658,7 +659,7 @@ BCAP_HRESULT bCap_ControllerGetTask(int iSockFd, u_long lhController, char *pTsk
 	if (pSndPacket != NULL){
 
 		u_char buff[LOCALBUFFER_SZ];
-		u_long lLen;
+		uint_t lLen;
 
 		{
 			pArg = Arg_Create( VT_I4, 1, 4, &lhController);
@@ -721,7 +722,7 @@ BCAP_HRESULT bCap_ControllerGetTask(int iSockFd, u_long lhController, char *pTsk
  *					So, Client program must allocate enough memory as *pResult.
  *
  */  
-BCAP_HRESULT bCap_ControllerExecute(int iSockFd, u_long lhController, char *pStrCommand, char *pStrOption, void *pResult){
+BCAP_HRESULT bCap_ControllerExecute(int iSockFd, uint_t lhController, char *pStrCommand, char *pStrOption, void *pResult){
 	BCAP_PACKET		*pSndPacket;
 	BCAP_PACKET		*pRecPacket;
 	BCAP_ARG		*pArg;
@@ -732,7 +733,7 @@ BCAP_HRESULT bCap_ControllerExecute(int iSockFd, u_long lhController, char *pStr
 	if (pSndPacket != NULL){
 
 		u_char buff[LOCALBUFFER_SZ];
-		u_long lLen;
+		uint_t lLen;
 
 		{
 			pArg = Arg_Create( VT_I4, 1, 4, &lhController);
@@ -788,7 +789,7 @@ BCAP_HRESULT bCap_ControllerExecute(int iSockFd, u_long lhController, char *pStr
  *
  */  
 
-BCAP_HRESULT	bCap_ControllerExecute2(int iSockFd, u_long lhController, char *pStrCommand, BCAP_VARIANT *pVntOption, BCAP_VARIANT *pVntResult){
+BCAP_HRESULT	bCap_ControllerExecute2(int iSockFd, uint_t lhController, char *pStrCommand, BCAP_VARIANT *pVntOption, BCAP_VARIANT *pVntResult){
 	BCAP_PACKET		*pSndPacket;
 	BCAP_PACKET		*pRecPacket;
 	BCAP_ARG		*pArg;
@@ -799,7 +800,7 @@ BCAP_HRESULT	bCap_ControllerExecute2(int iSockFd, u_long lhController, char *pSt
 	if (pSndPacket != NULL){
 
 		u_char buff[LOCALBUFFER_SZ];
-		u_long lLen;
+		uint_t lLen;
 
 		{
 			pArg = Arg_Create( VT_I4, 1, 4, &lhController);
@@ -817,7 +818,7 @@ BCAP_HRESULT	bCap_ControllerExecute2(int iSockFd, u_long lhController, char *pSt
 		}
 
 		if (pVntOption != NULL){
-			u_long lSize;
+			uint_t lSize;
 			lSize = sizeOfVariant(*pVntOption);
 			if (lSize >= 0){
 				pArg = Arg_Create( pVntOption->Type, pVntOption->Arrays, lSize, &(pVntOption->Value));
@@ -858,7 +859,7 @@ BCAP_HRESULT	bCap_ControllerExecute2(int iSockFd, u_long lhController, char *pSt
  *	@retval	BCAP_HRESULT
  *
  */  
-BCAP_HRESULT bCap_RobotRelease(int iSockFd, u_long lhRobot){
+BCAP_HRESULT bCap_RobotRelease(int iSockFd, uint_t lhRobot){
 	BCAP_PACKET		*pSndPacket;
 	BCAP_PACKET		*pRecPacket;
 	BCAP_ARG		*pArg;
@@ -904,7 +905,7 @@ BCAP_HRESULT bCap_RobotRelease(int iSockFd, u_long lhRobot){
  *	@retval	BCAP_HRESULT
  *
  */  
-BCAP_HRESULT bCap_RobotGetVariable(int iSockFd, u_long lhRobot, char *pVarName, char *pstrOption, u_long *plhVar){
+BCAP_HRESULT bCap_RobotGetVariable(int iSockFd, uint_t lhRobot, char *pVarName, char *pstrOption, uint_t *plhVar){
 	BCAP_PACKET		*pSndPacket;
 	BCAP_PACKET		*pRecPacket;
 	BCAP_ARG		*pArg;
@@ -915,7 +916,7 @@ BCAP_HRESULT bCap_RobotGetVariable(int iSockFd, u_long lhRobot, char *pVarName, 
 	if (pSndPacket != NULL){
 
 		u_char buff[LOCALBUFFER_SZ];
-		u_long lLen;
+		uint_t lLen;
 
 		{
 			pArg = Arg_Create( VT_I4, 1, 4, &lhRobot);
@@ -976,7 +977,7 @@ BCAP_HRESULT bCap_RobotGetVariable(int iSockFd, u_long lhRobot, char *pVarName, 
  *					So, Client program must allocate enough memory as *pResult.
  *
  */  
-BCAP_HRESULT bCap_RobotExecute(int iSockFd, u_long lhRobot, char *pStrCommand, char *pStrOption, void *pResult){
+BCAP_HRESULT bCap_RobotExecute(int iSockFd, uint_t lhRobot, char *pStrCommand, char *pStrOption, void *pResult){
 	BCAP_PACKET		*pSndPacket;
 	BCAP_PACKET		*pRecPacket;
 	BCAP_ARG		*pArg;
@@ -987,7 +988,7 @@ BCAP_HRESULT bCap_RobotExecute(int iSockFd, u_long lhRobot, char *pStrCommand, c
 	if (pSndPacket != NULL){
 
 		u_char buff[LOCALBUFFER_SZ];
-		u_long lLen;
+		uint_t lLen;
 
 		{
 			pArg = Arg_Create( VT_I4, 1, 4, &lhRobot);
@@ -1043,7 +1044,7 @@ BCAP_HRESULT bCap_RobotExecute(int iSockFd, u_long lhRobot, char *pStrCommand, c
  *
  */  
 
-BCAP_HRESULT	bCap_RobotExecute2(int iSockFd, u_long lhRobot, char *pStrCommand, BCAP_VARIANT *pVntOption, BCAP_VARIANT *pVntResult){
+BCAP_HRESULT	bCap_RobotExecute2(int iSockFd, uint_t lhRobot, char *pStrCommand, BCAP_VARIANT *pVntOption, BCAP_VARIANT *pVntResult){
 	BCAP_PACKET		*pSndPacket;
 	BCAP_PACKET		*pRecPacket;
 	BCAP_ARG		*pArg;
@@ -1054,7 +1055,7 @@ BCAP_HRESULT	bCap_RobotExecute2(int iSockFd, u_long lhRobot, char *pStrCommand, 
 	if (pSndPacket != NULL){
 
 		u_char buff[LOCALBUFFER_SZ];
-		u_long lLen;
+		uint_t lLen;
 
 		{
 			pArg = Arg_Create( VT_I4, 1, 4, &lhRobot);
@@ -1072,7 +1073,7 @@ BCAP_HRESULT	bCap_RobotExecute2(int iSockFd, u_long lhRobot, char *pStrCommand, 
 		}
 
 		if (pVntOption != NULL){
-			u_long lSize;
+			uint_t lSize;
 			lSize = sizeOfVariant(*pVntOption);
 			if (lSize >= 0){
 				pArg = Arg_Create( pVntOption->Type, pVntOption->Arrays, lSize, &(pVntOption->Value));
@@ -1116,7 +1117,7 @@ BCAP_HRESULT	bCap_RobotExecute2(int iSockFd, u_long lhRobot, char *pStrCommand, 
  *	@retval	BCAP_HRESULT
  *
  */  
-BCAP_HRESULT bCap_RobotChange(int iSockFd, u_long lhRobot, char *pStrCommand){
+BCAP_HRESULT bCap_RobotChange(int iSockFd, uint_t lhRobot, char *pStrCommand){
 	BCAP_PACKET		*pSndPacket;
 	BCAP_PACKET		*pRecPacket;
 	BCAP_ARG		*pArg;
@@ -1127,7 +1128,7 @@ BCAP_HRESULT bCap_RobotChange(int iSockFd, u_long lhRobot, char *pStrCommand){
 	if (pSndPacket != NULL){
 
 		u_char buff[LOCALBUFFER_SZ];
-		u_long lLen;
+		uint_t lLen;
 
 		{
 			pArg = Arg_Create( VT_I4, 1, 4, &lhRobot);
@@ -1174,7 +1175,7 @@ BCAP_HRESULT bCap_RobotChange(int iSockFd, u_long lhRobot, char *pStrCommand){
  *	@retval	BCAP_HRESULT
  *
  */  
-BCAP_HRESULT bCap_RobotMove(int iSockFd, u_long lhRobot, long lComp, char *pStrPose, char *pStrOption){
+BCAP_HRESULT bCap_RobotMove(int iSockFd, uint_t lhRobot, long lComp, char *pStrPose, char *pStrOption){
 	BCAP_PACKET		*pSndPacket;
 	BCAP_PACKET		*pRecPacket;
 	BCAP_ARG		*pArg;
@@ -1185,7 +1186,7 @@ BCAP_HRESULT bCap_RobotMove(int iSockFd, u_long lhRobot, long lComp, char *pStrP
 	if (pSndPacket != NULL){
 
 		u_char buff[LOCALBUFFER_SZ];
-		u_long lLen;
+		uint_t lLen;
 
 		{
 			pArg = Arg_Create( VT_I4, 1, 4, &lhRobot);		/* Arg1 Handle of the robot */
@@ -1249,7 +1250,7 @@ BCAP_HRESULT bCap_RobotMove(int iSockFd, u_long lhRobot, long lComp, char *pStrP
  *					So, Client program must allocate enough memory as *pResult.
  *
  */  
-BCAP_HRESULT bCap_RobotExecuteSlaveMove(int iSockFd, u_long lhRobot, char *pStrCommand, float *pfOption, void *pResult){
+BCAP_HRESULT bCap_RobotExecuteSlaveMove(int iSockFd, uint_t lhRobot, char *pStrCommand, float *pfOption, void *pResult){
 	BCAP_PACKET		*pSndPacket;
 	BCAP_PACKET		*pRecPacket;
 	BCAP_ARG		*pArg;
@@ -1260,7 +1261,7 @@ BCAP_HRESULT bCap_RobotExecuteSlaveMove(int iSockFd, u_long lhRobot, char *pStrC
 	if (pSndPacket != NULL){
 
 		u_char buff[LOCALBUFFER_SZ];
-		u_long lLen;
+		uint_t lLen;
 
 		{
 			pArg = Arg_Create( VT_I4, 1, 4, &lhRobot);
@@ -1311,7 +1312,7 @@ BCAP_HRESULT bCap_RobotExecuteSlaveMove(int iSockFd, u_long lhRobot, char *pStrC
  *	@retval	BCAP_HRESULT
  *
  */  
-BCAP_HRESULT bCap_TaskRelease(int iSockFd, u_long lhTask){
+BCAP_HRESULT bCap_TaskRelease(int iSockFd, uint_t lhTask){
 	BCAP_PACKET		*pSndPacket;
 	BCAP_PACKET		*pRecPacket;
 	BCAP_ARG		*pArg;
@@ -1356,7 +1357,7 @@ BCAP_HRESULT bCap_TaskRelease(int iSockFd, u_long lhTask){
  *	@retval	BCAP_HRESULT
  *
  */  
-BCAP_HRESULT bCap_TaskGetVariable(int iSockFd, u_long lhTask, char *pVarName, char *pstrOption, u_long *plhVar){
+BCAP_HRESULT bCap_TaskGetVariable(int iSockFd, uint_t lhTask, char *pVarName, char *pstrOption, uint_t *plhVar){
 	BCAP_PACKET		*pSndPacket;
 	BCAP_PACKET		*pRecPacket;
 	BCAP_ARG		*pArg;
@@ -1367,7 +1368,7 @@ BCAP_HRESULT bCap_TaskGetVariable(int iSockFd, u_long lhTask, char *pVarName, ch
 	if (pSndPacket != NULL){
 
 		u_char buff[LOCALBUFFER_SZ];
-		u_long lLen;
+		uint_t lLen;
 
 		{
 			pArg = Arg_Create( VT_I4, 1, 4, &lhTask);
@@ -1425,7 +1426,7 @@ BCAP_HRESULT bCap_TaskGetVariable(int iSockFd, u_long lhTask, char *pVarName, ch
  *	@retval	BCAP_HRESULT
  *
  */  
-BCAP_HRESULT bCap_TaskStart(int iSockFd, u_long lhTask, long lMode, char *pStrOption){
+BCAP_HRESULT bCap_TaskStart(int iSockFd, uint_t lhTask, long lMode, char *pStrOption){
 	BCAP_PACKET		*pSndPacket;
 	BCAP_PACKET		*pRecPacket;
 	BCAP_ARG		*pArg;
@@ -1436,7 +1437,7 @@ BCAP_HRESULT bCap_TaskStart(int iSockFd, u_long lhTask, long lMode, char *pStrOp
 	if (pSndPacket != NULL){
 
 		u_char buff[LOCALBUFFER_SZ];
-		u_long lLen;
+		uint_t lLen;
 
 		{
 			pArg = Arg_Create( VT_I4, 1, 4, &lhTask);		/* Arg1 Handle of the task */
@@ -1491,7 +1492,7 @@ BCAP_HRESULT bCap_TaskStart(int iSockFd, u_long lhTask, long lMode, char *pStrOp
  *	@retval	BCAP_HRESULT
  *
  */  
-BCAP_HRESULT bCap_TaskStop(int iSockFd, u_long lhTask, long lMode, char *pStrOption){
+BCAP_HRESULT bCap_TaskStop(int iSockFd, uint_t lhTask, long lMode, char *pStrOption){
 	BCAP_PACKET		*pSndPacket;
 	BCAP_PACKET		*pRecPacket;
 	BCAP_ARG		*pArg;
@@ -1502,7 +1503,7 @@ BCAP_HRESULT bCap_TaskStop(int iSockFd, u_long lhTask, long lMode, char *pStrOpt
 	if (pSndPacket != NULL){
 
 		u_char buff[LOCALBUFFER_SZ];
-		u_long lLen;
+		uint_t lLen;
 
 		{
 			pArg = Arg_Create( VT_I4, 1, 4, &lhTask);		/* Arg1 Handle of the task */
@@ -1555,7 +1556,7 @@ BCAP_HRESULT bCap_TaskStop(int iSockFd, u_long lhTask, long lMode, char *pStrOpt
  *	@retval	BCAP_HRESULT
  *
  */  
-BCAP_HRESULT bCap_VariableRelease(int iSockFd, u_long lhVar){
+BCAP_HRESULT bCap_VariableRelease(int iSockFd, uint_t lhVar){
 	BCAP_PACKET		*pSndPacket;
 	BCAP_PACKET		*pRecPacket;
 	BCAP_ARG		*pArg;
@@ -1598,7 +1599,7 @@ BCAP_HRESULT bCap_VariableRelease(int iSockFd, u_long lhVar){
  *	@detail	Note:	 This function write value into *pVntValue,
  *					So, Client program must allocate enough memory as *pVntValue.
  */  
-BCAP_HRESULT bCap_VariableGetValue(int iSockFd, u_long lhVar, void *pVntValue){
+BCAP_HRESULT bCap_VariableGetValue(int iSockFd, uint_t lhVar, void *pVntValue){
 	BCAP_PACKET		*pSndPacket;
 	BCAP_PACKET		*pRecPacket;
 	BCAP_ARG		*pArg;
@@ -1649,7 +1650,7 @@ BCAP_HRESULT bCap_VariableGetValue(int iSockFd, u_long lhVar, void *pVntValue){
  *	@param	*pVntValue		:	[in]  value stored pointer
  *	@retval	BCAP_HRESULT
  */  
-BCAP_HRESULT bCap_VariablePutValue(int iSockFd, u_long lhVar, u_short iType, u_long lArrays, void  *pVntValue){
+BCAP_HRESULT bCap_VariablePutValue(int iSockFd, uint_t lhVar, u_short iType, uint_t lArrays, void  *pVntValue){
 	BCAP_PACKET		*pSndPacket;
 	BCAP_PACKET		*pRecPacket;
 	BCAP_ARG		*pArg;
@@ -1667,13 +1668,13 @@ BCAP_HRESULT bCap_VariablePutValue(int iSockFd, u_long lhVar, u_short iType, u_l
 		}
 
 		{
-			u_long lDataLen = 0; 
+			uint_t lDataLen = 0; 
 
 			if ((iType  & ~VT_ARRAY) == VT_BSTR) {		/* Mask "Array" */	/* IMPL:Not Support String array now. */
 				/* String data */
 
 				u_char buff[LOCALBUFFER_SZ];
-				u_long lLen;
+				uint_t lLen;
 
 				lLen = copyToBSTR(buff,pVntValue);
 				pArg = Arg_Create( VT_BSTR, 1, lLen,buff);
@@ -1684,11 +1685,11 @@ BCAP_HRESULT bCap_VariablePutValue(int iSockFd, u_long lhVar, u_short iType, u_l
 			else{
 				/* Not string data */
 
-				u_long lLen;
+				uint_t lLen;
 				lLen = sizeOfVarType((u_short)(iType  & ~VT_ARRAY));
 				lDataLen = lLen * lArrays;
 				if (lDataLen != 0){
-					u_long i;
+					uint_t i;
 					u_char *pSrcData = (u_char *)pVntValue;
 					u_char *pDstData = (u_char *)bMalloc(lDataLen);
 					if (pDstData != NULL){
@@ -1804,16 +1805,10 @@ static u_char *receivePacket(int iSockFd){
 	u_char	*pPacketBuff = NULL;
 	u_char	*pRemainData;
 
-	u_long lRecvSize;
+	uint_t lRecvSize;
 	int lRecLen;
-	u_long lHeaderLen;
+	uint_t lHeaderLen;
 	printf("DRIVER: Bug Trace. Line %d\n", __LINE__);
-#if BCAP_CONNECTION_UDP
-
-	int          fromlen;
-	struct sockaddr_in	serverAddr;			/* server's socket address */ 
-#endif
-
 	/* b-CAP header = 15 bytes, this should be recieved at first */	
 	lHeaderLen = BCAP_SIZE_SOH + BCAP_SIZE_LEN + 
 				BCAP_SIZE_SERIAL + BCAP_SIZE_RESERVE +
@@ -1822,27 +1817,13 @@ static u_char *receivePacket(int iSockFd){
 	/* Receive b-Cap header */
 	lRecvSize = 0;
 	while (lRecvSize < lHeaderLen) {
-#if BCAP_CONNECTION_COM	/* COM */
-#ifdef WIN32
-		ReadFile((HANDLE)iSockFd, (char *)&(pRcvBuffer[lRecvSize]), lHeaderLen - lRecvSize, (LPDWORD)&lRecLen, NULL);
-#else
+                printf("DRIVER: Bug Trace. Line %d\n", __LINE__);
 		lRecLen = read(iSockFd, (char *)&(pRcvBuffer[lRecvSize]), lHeaderLen - lRecvSize);
-#endif
-#else
-#if BCAP_CONNECTION_UDP
-		fromlen = sizeof(serverAddr);
-		memset( (char *)&serverAddr, 0, sizeof(struct sockaddr_in));
-		lRecLen = recvfrom(iSockFd, (char *)&(pRcvBuffer[lRecvSize]), LOCALRECBUFFER_SZ - lRecvSize, 0, (struct sockaddr *)&serverAddr, &fromlen);
-		/* if the sock is not from the server, then ignore  */
-		if ((serverAddr.sin_addr.s_addr != m_sockServerAddr.sin_addr.s_addr) || (serverAddr.sin_port != m_sockServerAddr.sin_port)) {
-			continue;
-		}
-#else /* TCP */
-		lRecLen = recv(iSockFd, (char *)&(pRcvBuffer[lRecvSize]), lHeaderLen - lRecvSize, 0); 
-#endif
-#endif
+                printf("[DRIVER] Error: %s at Line %d\n", strerror(errno), __LINE__);
+
 		if(lRecLen <= 0) {	/* if sock errer has detected, then exit  */
-			goto ExitPoint;
+			  printf("DRIVER: Bug Trace. Line %d\n", __LINE__);
+                          goto ExitPoint;
 		}
 		lRecvSize += lRecLen;			/* add read bytes */
 
@@ -1860,8 +1841,8 @@ static u_char *receivePacket(int iSockFd){
 
 	/* Receive the left data of this packet */
 	{
-		u_long lPacketSize;
-		u_long lRemainSize;
+		uint_t lPacketSize;
+		uint_t lRemainSize;
 
 		copyValue(&lPacketSize, &(pRcvBuffer[1]), BCAP_SIZE_LEN);
 		lRemainSize  = lPacketSize - lRecvSize;
@@ -1936,7 +1917,7 @@ ExitPoint:
  *					And If NULL pointer is returned , then was allocation error/
  *					
  */  
- static BCAP_HRESULT sendBinary(int iSockFd, u_char *pBuff, u_long lSize){
+ static BCAP_HRESULT sendBinary(int iSockFd, u_char *pBuff, uint_t lSize){
 
 	BCAP_HRESULT hr = BCAP_E_FAIL;
 	int iLen;
@@ -1985,7 +1966,9 @@ static BCAP_HRESULT			Packet_Send(int iSockFd, BCAP_PACKET *pPacket){
 
 	void *pbSendData; 
 
-	pbSendData = bMalloc(pPacket->lMsgLength);	
+	pbSendData = bMalloc(pPacket->lMsgLength);
+        printf("[DRIVER] Size Packet Send: %ld bytes (size of pbSendData). \n \
+        Line %d\n",pPacket->lMsgLength,__LINE__);  
 	if (pbSendData != NULL){
 		if (Packet_Serialize(pPacket, pbSendData) == BCAP_S_OK){
 
@@ -2106,7 +2089,7 @@ static void			Packet_Release( BCAP_PACKET *pPacket){
  *	@retval	New packet pointer is returned.
  *
  */  
-static BCAP_PACKET	*Packet_Create( u_long lFuncID){
+static BCAP_PACKET	*Packet_Create( uint_t lFuncID){
 	
 	 BCAP_PACKET *pNewPacket = NULL;
 
@@ -2119,8 +2102,14 @@ static BCAP_PACKET	*Packet_Create( u_long lFuncID){
 		pNewPacket->lFuncID = lFuncID;
 
 		pNewPacket->lMsgLength = BCAP_SIZE_BASE;
+                printf("[DRIVER] Size of type BCAP_SIZE_BASE: %d. Line%d\n", sizeof(BCAP_SIZE_BASE),__LINE__);
+                printf("[DRIVER] Size of lMsgLength: %d. Should be 4. Line%d\n",sizeof(pNewPacket->lMsgLength),__LINE__);
 #if BCAP_CONNECTION_COM	/* COM */
-		pNewPacket->lMsgLength += BCAP_SIZE_CRC;
+		 printf("[DRIVER] Size of lMsgLength: %d. Should be 4. Line%d\n",sizeof(pNewPacket->lMsgLength),__LINE__);
+
+                pNewPacket->lMsgLength += BCAP_SIZE_CRC;
+                 printf("[DRIVER] Size of lMsgLength: %d. Should be 4. Line%d\n",sizeof(pNewPacket->lMsgLength),__LINE__);
+
 #endif
 		pNewPacket->pArg = NULL;
 
@@ -2151,20 +2140,23 @@ static BCAP_HRESULT		Packet_Serialize(BCAP_PACKET *pSrcPacket, void *pDstBinData
 	u_char *pDstPtr;
 
 	pDstPtr = (u_char *)pDstBinData;
-
+        //pDstPtr = pDstBinData;
 	/* SOH */
-	*pDstPtr = BCAP_SOH;	
-	pDstPtr += BCAP_SIZE_SOH;
+	*pDstPtr = BCAP_SOH;
+       	pDstPtr += BCAP_SIZE_SOH;
 	/* Header */
-	pDstPtr += copyValue( pDstPtr, &(pSrcPacket->lMsgLength), sizeof(pSrcPacket->lMsgLength));
-	pDstPtr += copyValue( pDstPtr, &(pSrcPacket->iSerialNo), sizeof(pSrcPacket->iSerialNo));
-	pDstPtr += copyValue( pDstPtr, &(pSrcPacket->iReserved), sizeof(pSrcPacket->iReserved));
-	pDstPtr += copyValue( pDstPtr, &(pSrcPacket->lFuncID), sizeof(pSrcPacket->lFuncID));
-	pDstPtr += copyValue( pDstPtr, &(pSrcPacket->iArgs), sizeof(pSrcPacket->iArgs));
-
-
+        printf("[DEBUG] Size of lMsgLength:%d. Line %d\n",sizeof(pSrcPacket->lMsgLength),__LINE__); 
+        printf("[DRIVER] Size of &(pSrcPacket->lMsgLength): %d. Should be 4. Line%d\n",sizeof(&(pSrcPacket->lMsgLength)),__LINE__);
+ 
+      	pDstPtr += copyValue( pDstPtr, &(pSrcPacket->lMsgLength), sizeof(pSrcPacket->lMsgLength));        	
+        pDstPtr += copyValue( pDstPtr, &(pSrcPacket->iSerialNo), sizeof(pSrcPacket->iSerialNo));         pDstPtr += copyValue( pDstPtr, &(pSrcPacket->iReserved), sizeof(pSrcPacket->iReserved));
+        pDstPtr += copyValue( pDstPtr, &(pSrcPacket->lFuncID), sizeof(pSrcPacket->lFuncID));     
+        pDstPtr += copyValue( pDstPtr, &(pSrcPacket->iArgs), sizeof(pSrcPacket->iArgs));
+        
+        /*[TODO] PRINT CONTENT OF PACKETS HERE*/
 	{	/* Copy args */
-		unsigned int i,j;
+		
+                unsigned int i,j;
 		BCAP_ARG *pArgPtr;
 		u_char *pbValue;
 		pArgPtr = pSrcPacket->pArg;
@@ -2179,7 +2171,7 @@ static BCAP_HRESULT		Packet_Serialize(BCAP_PACKET *pSrcPacket, void *pDstBinData
 					pbValue = (u_char *)pArgPtr->data;					/* value stored pointer is set */
 
 					for (j= 0; j < pArgPtr->lArrays; j++){
-						u_long lValueSize;
+						uint_t lValueSize;
 						u_short iVarType = pArgPtr->iType & ~VT_ARRAY;	/* Mask "Array" */
 						switch (iVarType){
 							case VT_UI1:
@@ -2199,7 +2191,7 @@ static BCAP_HRESULT		Packet_Serialize(BCAP_PACKET *pSrcPacket, void *pDstBinData
 
 							case VT_BSTR:
 								{
-									u_long lStrLen;
+									uint_t lStrLen;
 									copyValue( &lStrLen, pbValue, BCAP_SIZE_ARGSTRLEN);
 									pDstPtr += copyValue( pDstPtr, &lStrLen, BCAP_SIZE_ARGSTRLEN);	/* Set String length (4 bytes) */
 									pbValue += BCAP_SIZE_ARGSTRLEN;		/* value stored pointer is added */
@@ -2233,7 +2225,8 @@ static BCAP_HRESULT		Packet_Serialize(BCAP_PACKET *pSrcPacket, void *pDstBinData
 
 #if BCAP_CONNECTION_COM	/* COM */
 	{	/* CRC calculation */
-		u_long dwPos, cnt;
+		printf("Calculating CRC");
+                uint_t dwPos, cnt;
 		u_short crc;
 		crc = 0xFFFF;		
 		for (dwPos = 1; dwPos < pSrcPacket->lMsgLength - 3; dwPos++) {
@@ -2254,6 +2247,12 @@ static BCAP_HRESULT		Packet_Serialize(BCAP_PACKET *pSrcPacket, void *pDstBinData
 	/* EOT */
 	*pDstPtr = BCAP_EOT;	
 	pDstPtr += BCAP_SIZE_EOT;
+        
+        /*Printing the content of pDstPtr*/
+        printf("[DRIVER][LINE %d] The content of pDstPtr:\n",__LINE__);
+        for(int i=0; i < 18 ;i++)
+          printf("%02X ",pDstPtr[i]);
+        printf("\n");
 
 	return hr;
 }
@@ -2277,7 +2276,7 @@ static BCAP_HRESULT		Packet_Deserialize(void *pSrcBinData, BCAP_PACKET *pDstPack
 	u_char *pSrcPtr;
 
 	u_short	iArgs;
-	u_long	lMsgLength;
+	uint_t	lMsgLength;
 	
 	pSrcPtr = (u_char *)pSrcBinData;
 
@@ -2300,10 +2299,10 @@ static BCAP_HRESULT		Packet_Deserialize(void *pSrcBinData, BCAP_PACKET *pDstPack
 		pArgPtr = pDstPacket->pArg;
 
 		for (i = 0 ; i < iArgs ; i++){
-			u_long	lDataSize;	/* size of "*data" */
-			u_long	lLength;	/* size of argument block */
+			uint_t	lDataSize;	/* size of "*data" */
+			uint_t	lLength;	/* size of argument block */
 			u_short iType;
-			u_long	lArrays;
+			uint_t	lArrays;
 
 			pSrcPtr += copyValue( &lLength, pSrcPtr, sizeof(lLength));		/* size of a argument block  */
 			pSrcPtr += copyValue( &iType, pSrcPtr, sizeof(iType));
@@ -2365,8 +2364,8 @@ BCAP_HRESULT Packet_GetResult(BCAP_PACKET *pRecPacket, void *pResult){
 	if (pRecPacket != NULL){
 		if (pRecPacket->iArgs >= 1){
 			{	/* Copy values */
-				u_long i;
-				u_long lSize;
+				uint_t i;
+				uint_t lSize;
 				u_short iType;
 				BCAP_ARG	*pArgValue = pRecPacket->pArg;
 
@@ -2417,7 +2416,7 @@ BCAP_HRESULT Packet_GetResult(BCAP_PACKET *pRecPacket, void *pResult){
  *	@detail	Note:When BSTR is used, *data must be store "Length:4byte" + "DoubleByte String"
  *					See alose function CopyToBSTR().
  */  
-static BCAP_ARG		*Arg_Create( u_short iType, u_long lArrays, u_long lDataSize, void *data){
+static BCAP_ARG		*Arg_Create( u_short iType, uint_t lArrays, uint_t lDataSize, void *data){
 
 	BCAP_ARG *pNewArg = NULL;
 
@@ -2491,20 +2490,20 @@ static void			Arg_Release( BCAP_ARG *pArg){
  * @detail	Note 1: If (iType = VT_BSTR), then this function returns BCAP_SIZE_ARGSTRLEN (= 4 bytes)
  *			Note 2: Not support VT_VARIANT,VT_EMPTY,VT_NULL,VT_ERROR,VT_CY,VT_DATE
  */
-static u_long sizeOfVariant(BCAP_VARIANT vntValue){
-	u_long lSize = 0;
+static uint_t sizeOfVariant(BCAP_VARIANT vntValue){
+	uint_t lSize = 0;
 
 	if (vntValue.Arrays > 0) {
 		switch (vntValue.Type & ~VT_ARRAY){
 			case VT_BSTR:
 				{
-					u_long i;
-					u_long lStrLen;
+					uint_t i;
+					uint_t lStrLen;
 					char	*pData;
 
 					pData = (char *)(&vntValue.Value);
 					for (i =0; i < vntValue.Arrays; i++){
-						lStrLen = (u_long)strlen(pData);
+						lStrLen = (uint_t)strlen(pData);
 						lSize += lStrLen;
 						pData += lStrLen;
 					}
@@ -2531,9 +2530,9 @@ static u_long sizeOfVariant(BCAP_VARIANT vntValue){
  * @detail	Note 1: If (iType = VT_BSTR), then this function returns BCAP_SIZE_ARGSTRLEN (= 4 bytes)
  *			Note 2: Not support VT_VARIANT,VT_EMPTY,VT_NULL,VT_ERROR,VT_CY,VT_DATE
  */
-static u_long sizeOfVarType(u_short iType){
+static uint_t sizeOfVarType(u_short iType){
 
-	 u_long lValueSize = 0;
+	 uint_t lValueSize = 0;
 
 	 switch (iType & ~VT_ARRAY){
 		case VT_UI1:
@@ -2589,11 +2588,11 @@ static u_long sizeOfVarType(u_short iType){
  *	@retval	total size of BSTR is returned.
  *
  */  
- u_long copyToBSTR(void *pDstBstrPtr, void *pSrcAsciiPtr){
+ uint_t copyToBSTR(void *pDstBstrPtr, void *pSrcAsciiPtr){
 	u_char *pbDst = (u_char *)pDstBstrPtr;
 	u_char *pbSrc = (u_char *)pSrcAsciiPtr;
-	u_long	lStrLen,lLen2;
-	u_long	i;
+	uint_t	lStrLen,lLen2;
+	uint_t	i;
 
 	lStrLen = strlen((const char *)pbSrc);									/* length of source string (ascii) */
 	lLen2 = lStrLen * 2;
@@ -2619,11 +2618,11 @@ static u_long sizeOfVarType(u_short iType){
  *	@retval	total size of BSTR is returned.
  *
  */  
-static u_long copyFromBSTR(void *pDstAsciiPtr, void *pSrcBstrPtr){
+static uint_t copyFromBSTR(void *pDstAsciiPtr, void *pSrcBstrPtr){
 	u_char *pbDst = (u_char *)pDstAsciiPtr;
 	u_char *pbSrc = (u_char *)pSrcBstrPtr;
-	u_long	lStrLen,lLen2;
-	u_long	i;
+	uint_t	lStrLen,lLen2;
+	uint_t	i;
 
 	copyValue(&lStrLen, pbSrc, BCAP_SIZE_ARGSTRLEN);					/* Get BStr length */
 	pbSrc += BCAP_SIZE_ARGSTRLEN;
@@ -2653,12 +2652,12 @@ static u_long copyFromBSTR(void *pDstAsciiPtr, void *pSrcBstrPtr){
  *	@retval	total size of BSTR is returned.
  *
  */  
-static u_long copyVariantFromArg(BCAP_VARIANT *pVntDst, BCAP_ARG *pArg){
+static uint_t copyVariantFromArg(BCAP_VARIANT *pVntDst, BCAP_ARG *pArg){
 
-	u_long i;
-	u_long lSize;
+	uint_t i;
+	uint_t lSize;
 	u_short iType;
-	u_long lLength = 0;
+	uint_t lLength = 0;
 
 	if ((pVntDst != NULL) && (pArg != NULL)){
 
@@ -2705,12 +2704,12 @@ static u_long copyVariantFromArg(BCAP_VARIANT *pVntDst, BCAP_ARG *pArg){
  *	@retval	total size of BSTR is returned.
  *
  */  
-static u_long copyArgValue(void *pDst, BCAP_ARG *pArg){
+static uint_t copyArgValue(void *pDst, BCAP_ARG *pArg){
 
-	u_long i;
-	u_long lSize;
+	uint_t i;
+	uint_t lSize;
 	u_short iType;
-	u_long lLength = 0;
+	uint_t lLength = 0;
 
 	iType = (pArg->iType) & ~VT_ARRAY;	/* Mask "Array" */
 	if (iType == VT_BSTR){
@@ -2747,7 +2746,7 @@ static u_long copyArgValue(void *pDst, BCAP_ARG *pArg){
  *		
  *		alternate of htonl()/ntohl()
  */
-static u_long copyValue(void *pDst, void *pVntValue, u_long lLength){
+static uint_t copyValue(void *pDst, void *pVntValue, uint_t lLength){
 
 #if defined(__BIG_ENDIAN__)
 
@@ -2756,7 +2755,7 @@ static u_long copyValue(void *pDst, void *pVntValue, u_long lLength){
 	/* copy values inversion. b-CAP is based on little-endian */
         //printf("DRIVER: Bug Trace Big Endian conversion. Line %d\n", __LINE__);
 	{
-		u_long i;
+		uint_t i;
 
 		u_char *pbDst;
 		u_char *pbSrc;
@@ -2770,7 +2769,7 @@ static u_long copyValue(void *pDst, void *pVntValue, u_long lLength){
 	}
 #else
         //printf("DRIVER: Bug Trace Little Endian defined. Line %d\n", __LINE__);
-
+        printf("[DRIVER][LINE:%d] {Destination: %lu, Source: %lu}\n",__LINE__,sizeof(&pDst),sizeof(&pVntValue));
 	memcpy(pDst, pVntValue, lLength);
 #endif
 

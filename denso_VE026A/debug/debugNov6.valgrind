@@ -1,0 +1,91 @@
+==26386== Memcheck, a memory error detector
+==26386== Copyright (C) 2002-2015, and GNU GPL'd, by Julian Seward et al.
+==26386== Using Valgrind-3.11.0 and LibVEX; rerun with -h for copyright info
+==26386== Command: ./denso_ex
+==26386== Parent PID: 6005
+==26386== 
+==26386== Invalid write of size 1
+==26386==    at 0x4C3275B: memcpy@@GLIBC_2.14 (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==26386==    by 0x405478: copyValue (in /home/iman/version-control/c-playground/denso_VE026A/build/denso_ex)
+==26386==    by 0x4047AA: Packet_Serialize (in /home/iman/version-control/c-playground/denso_VE026A/build/denso_ex)
+==26386==    by 0x4044E9: Packet_Send (in /home/iman/version-control/c-playground/denso_VE026A/build/denso_ex)
+==26386==    by 0x404074: bCapSendAndRec (in /home/iman/version-control/c-playground/denso_VE026A/build/denso_ex)
+==26386==    by 0x4016F6: bCap_ServiceStart (in /home/iman/version-control/c-playground/denso_VE026A/build/denso_ex)
+==26386==    by 0x400FB9: main (in /home/iman/version-control/c-playground/denso_VE026A/build/denso_ex)
+==26386==  Address 0x550d572 is 0 bytes after a block of size 18 alloc'd
+==26386==    at 0x4C2DB8F: malloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==26386==    by 0x4054C0: bMalloc (in /home/iman/version-control/c-playground/denso_VE026A/build/denso_ex)
+==26386==    by 0x4044AD: Packet_Send (in /home/iman/version-control/c-playground/denso_VE026A/build/denso_ex)
+==26386==    by 0x404074: bCapSendAndRec (in /home/iman/version-control/c-playground/denso_VE026A/build/denso_ex)
+==26386==    by 0x4016F6: bCap_ServiceStart (in /home/iman/version-control/c-playground/denso_VE026A/build/denso_ex)
+==26386==    by 0x400FB9: main (in /home/iman/version-control/c-playground/denso_VE026A/build/denso_ex)
+==26386== 
+==26386== Invalid write of size 1
+==26386==    at 0x4C3275B: memcpy@@GLIBC_2.14 (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==26386==    by 0x405478: copyValue (in /home/iman/version-control/c-playground/denso_VE026A/build/denso_ex)
+==26386==    by 0x4047CA: Packet_Serialize (in /home/iman/version-control/c-playground/denso_VE026A/build/denso_ex)
+==26386==    by 0x4044E9: Packet_Send (in /home/iman/version-control/c-playground/denso_VE026A/build/denso_ex)
+==26386==    by 0x404074: bCapSendAndRec (in /home/iman/version-control/c-playground/denso_VE026A/build/denso_ex)
+==26386==    by 0x4016F6: bCap_ServiceStart (in /home/iman/version-control/c-playground/denso_VE026A/build/denso_ex)
+==26386==    by 0x400FB9: main (in /home/iman/version-control/c-playground/denso_VE026A/build/denso_ex)
+==26386==  Address 0x550d575 is 3 bytes after a block of size 18 alloc'd
+==26386==    at 0x4C2DB8F: malloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==26386==    by 0x4054C0: bMalloc (in /home/iman/version-control/c-playground/denso_VE026A/build/denso_ex)
+==26386==    by 0x4044AD: Packet_Send (in /home/iman/version-control/c-playground/denso_VE026A/build/denso_ex)
+==26386==    by 0x404074: bCapSendAndRec (in /home/iman/version-control/c-playground/denso_VE026A/build/denso_ex)
+==26386==    by 0x4016F6: bCap_ServiceStart (in /home/iman/version-control/c-playground/denso_VE026A/build/denso_ex)
+==26386==    by 0x400FB9: main (in /home/iman/version-control/c-playground/denso_VE026A/build/denso_ex)
+==26386== 
+==26386== Invalid write of size 1
+==26386==    at 0x4C3275B: memcpy@@GLIBC_2.14 (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==26386==    by 0x405478: copyValue (in /home/iman/version-control/c-playground/denso_VE026A/build/denso_ex)
+==26386==    by 0x404A05: Packet_Serialize (in /home/iman/version-control/c-playground/denso_VE026A/build/denso_ex)
+==26386==    by 0x4044E9: Packet_Send (in /home/iman/version-control/c-playground/denso_VE026A/build/denso_ex)
+==26386==    by 0x404074: bCapSendAndRec (in /home/iman/version-control/c-playground/denso_VE026A/build/denso_ex)
+==26386==    by 0x4016F6: bCap_ServiceStart (in /home/iman/version-control/c-playground/denso_VE026A/build/denso_ex)
+==26386==    by 0x400FB9: main (in /home/iman/version-control/c-playground/denso_VE026A/build/denso_ex)
+==26386==  Address 0x550d577 is 5 bytes after a block of size 18 alloc'd
+==26386==    at 0x4C2DB8F: malloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==26386==    by 0x4054C0: bMalloc (in /home/iman/version-control/c-playground/denso_VE026A/build/denso_ex)
+==26386==    by 0x4044AD: Packet_Send (in /home/iman/version-control/c-playground/denso_VE026A/build/denso_ex)
+==26386==    by 0x404074: bCapSendAndRec (in /home/iman/version-control/c-playground/denso_VE026A/build/denso_ex)
+==26386==    by 0x4016F6: bCap_ServiceStart (in /home/iman/version-control/c-playground/denso_VE026A/build/denso_ex)
+==26386==    by 0x400FB9: main (in /home/iman/version-control/c-playground/denso_VE026A/build/denso_ex)
+==26386== 
+==26386== Invalid write of size 1
+==26386==    at 0x404A0E: Packet_Serialize (in /home/iman/version-control/c-playground/denso_VE026A/build/denso_ex)
+==26386==    by 0x4044E9: Packet_Send (in /home/iman/version-control/c-playground/denso_VE026A/build/denso_ex)
+==26386==    by 0x404074: bCapSendAndRec (in /home/iman/version-control/c-playground/denso_VE026A/build/denso_ex)
+==26386==    by 0x4016F6: bCap_ServiceStart (in /home/iman/version-control/c-playground/denso_VE026A/build/denso_ex)
+==26386==    by 0x400FB9: main (in /home/iman/version-control/c-playground/denso_VE026A/build/denso_ex)
+==26386==  Address 0x550d579 is 7 bytes after a block of size 18 alloc'd
+==26386==    at 0x4C2DB8F: malloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==26386==    by 0x4054C0: bMalloc (in /home/iman/version-control/c-playground/denso_VE026A/build/denso_ex)
+==26386==    by 0x4044AD: Packet_Send (in /home/iman/version-control/c-playground/denso_VE026A/build/denso_ex)
+==26386==    by 0x404074: bCapSendAndRec (in /home/iman/version-control/c-playground/denso_VE026A/build/denso_ex)
+==26386==    by 0x4016F6: bCap_ServiceStart (in /home/iman/version-control/c-playground/denso_VE026A/build/denso_ex)
+==26386==    by 0x400FB9: main (in /home/iman/version-control/c-playground/denso_VE026A/build/denso_ex)
+==26386== 
+==26386== Invalid read of size 1
+==26386==    at 0x404A36: Packet_Serialize (in /home/iman/version-control/c-playground/denso_VE026A/build/denso_ex)
+==26386==    by 0x4044E9: Packet_Send (in /home/iman/version-control/c-playground/denso_VE026A/build/denso_ex)
+==26386==    by 0x404074: bCapSendAndRec (in /home/iman/version-control/c-playground/denso_VE026A/build/denso_ex)
+==26386==    by 0x4016F6: bCap_ServiceStart (in /home/iman/version-control/c-playground/denso_VE026A/build/denso_ex)
+==26386==    by 0x400FB9: main (in /home/iman/version-control/c-playground/denso_VE026A/build/denso_ex)
+==26386==  Address 0x550d57a is 8 bytes after a block of size 18 alloc'd
+==26386==    at 0x4C2DB8F: malloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==26386==    by 0x4054C0: bMalloc (in /home/iman/version-control/c-playground/denso_VE026A/build/denso_ex)
+==26386==    by 0x4044AD: Packet_Send (in /home/iman/version-control/c-playground/denso_VE026A/build/denso_ex)
+==26386==    by 0x404074: bCapSendAndRec (in /home/iman/version-control/c-playground/denso_VE026A/build/denso_ex)
+==26386==    by 0x4016F6: bCap_ServiceStart (in /home/iman/version-control/c-playground/denso_VE026A/build/denso_ex)
+==26386==    by 0x400FB9: main (in /home/iman/version-control/c-playground/denso_VE026A/build/denso_ex)
+==26386== 
+==26386== 
+==26386== HEAP SUMMARY:
+==26386==     in use at exit: 0 bytes in 0 blocks
+==26386==   total heap usage: 4 allocs, 4 frees, 1,122 bytes allocated
+==26386== 
+==26386== All heap blocks were freed -- no leaks are possible
+==26386== 
+==26386== For counts of detected and suppressed errors, rerun with: -v
+==26386== ERROR SUMMARY: 16 errors from 5 contexts (suppressed: 0 from 0)

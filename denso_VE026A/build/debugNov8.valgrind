@@ -1,0 +1,29 @@
+==32358== Memcheck, a memory error detector
+==32358== Copyright (C) 2002-2015, and GNU GPL'd, by Julian Seward et al.
+==32358== Using Valgrind-3.11.0 and LibVEX; rerun with -h for copyright info
+==32358== Command: ./denso_ex
+==32358== Parent PID: 6005
+==32358== 
+==32358== Invalid read of size 1
+==32358==    at 0x404A38: Packet_Serialize (in /home/iman/version-control/c-playground/denso_VE026A/build/denso_ex)
+==32358==    by 0x40444C: Packet_Send (in /home/iman/version-control/c-playground/denso_VE026A/build/denso_ex)
+==32358==    by 0x403FF0: bCapSendAndRec (in /home/iman/version-control/c-playground/denso_VE026A/build/denso_ex)
+==32358==    by 0x4016E6: bCap_ServiceStart (in /home/iman/version-control/c-playground/denso_VE026A/build/denso_ex)
+==32358==    by 0x400FB9: main (in /home/iman/version-control/c-playground/denso_VE026A/build/denso_ex)
+==32358==  Address 0x550d552 is 0 bytes after a block of size 18 alloc'd
+==32358==    at 0x4C2DB8F: malloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==32358==    by 0x405479: bMalloc (in /home/iman/version-control/c-playground/denso_VE026A/build/denso_ex)
+==32358==    by 0x404412: Packet_Send (in /home/iman/version-control/c-playground/denso_VE026A/build/denso_ex)
+==32358==    by 0x403FF0: bCapSendAndRec (in /home/iman/version-control/c-playground/denso_VE026A/build/denso_ex)
+==32358==    by 0x4016E6: bCap_ServiceStart (in /home/iman/version-control/c-playground/denso_VE026A/build/denso_ex)
+==32358==    by 0x400FB9: main (in /home/iman/version-control/c-playground/denso_VE026A/build/denso_ex)
+==32358== 
+==32358== 
+==32358== HEAP SUMMARY:
+==32358==     in use at exit: 0 bytes in 0 blocks
+==32358==   total heap usage: 4 allocs, 4 frees, 1,090 bytes allocated
+==32358== 
+==32358== All heap blocks were freed -- no leaks are possible
+==32358== 
+==32358== For counts of detected and suppressed errors, rerun with: -v
+==32358== ERROR SUMMARY: 18 errors from 1 contexts (suppressed: 0 from 0)

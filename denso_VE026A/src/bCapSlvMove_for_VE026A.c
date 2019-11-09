@@ -83,7 +83,7 @@ int main(int argc, char* argv[])
 
         printf("Line %d\n", __LINE__);
         int iSockFD;
-	u_long lhController;
+	uint_t lhController;
 	BCAP_HRESULT hr = BCAP_S_OK;
         
         //printf("Line 75 Debug Here\n");
@@ -122,8 +122,8 @@ printf("BSLAVE: iSockFd:Address %p,Value %d. Line %d\n", &iSockFD, iSockFD,__LIN
         printf("Line 103 Auspicious brackets. If stops here means robot is not connected");
 	{
 
-		u_long lhRobot;
-		u_long lhVar;
+		uint_t lhRobot;
+		uint_t lhVar;
 		long lResult;
 
                 printf("Attempting to get robot handle. Line %d\n", __LINE__);
